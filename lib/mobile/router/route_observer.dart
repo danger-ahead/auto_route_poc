@@ -2,7 +2,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
-// Global state manager for route history
+// Global state manager for route history and current route tracking
 class RouteHistoryManager {
   static final RouteHistoryManager _instance = RouteHistoryManager._internal();
   factory RouteHistoryManager() => _instance;
@@ -10,9 +10,14 @@ class RouteHistoryManager {
 
   final List<String> _navigationStack = [];
   final ValueNotifier<bool> canGoBack = ValueNotifier<bool>(false);
+  final ValueNotifier<String?> currentRoute = ValueNotifier<String?>(null);
+  final ValueNotifier<Map<String, dynamic>> currentRouteData = ValueNotifier<Map<String, dynamic>>({});
 
-  void pushRoute(String routeName) {
-    // Only track meaningful navigation routes, not tab switches
+  void pushRoute(String routeName, {Map<String, dynamic>? routeData}) {
+    // Update current route information
+    currentRoute.value = routeName;
+    currentRouteData.value = routeData ?? {};
+
     if (_isMeaningfulRoute(routeName)) {
       _navigationStack.add(routeName);
       _scheduleUpdate();
@@ -23,6 +28,11 @@ class RouteHistoryManager {
     if (_navigationStack.isNotEmpty) {
       _navigationStack.removeLast();
       _scheduleUpdate();
+    }
+
+    // Update current route to the previous one if available
+    if (_navigationStack.isNotEmpty) {
+      currentRoute.value = _navigationStack.last;
     }
   }
 
@@ -58,6 +68,8 @@ class RouteHistoryManager {
 
   void clearHistory() {
     _navigationStack.clear();
+    currentRoute.value = null;
+    currentRouteData.value = {};
     _scheduleUpdate();
   }
 
@@ -71,7 +83,8 @@ class CustomRouteObserver extends AutoRouteObserver {
   void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
     super.didPush(route, previousRoute);
     if (route.settings.name != null) {
-      _historyManager.pushRoute(route.settings.name!);
+      final routeData = _extractRouteData(route);
+      _historyManager.pushRoute(route.settings.name!, routeData: routeData);
     }
   }
 
@@ -89,7 +102,8 @@ class CustomRouteObserver extends AutoRouteObserver {
     // For replace, we don't change the stack size, just update the top route
     if (newRoute?.settings.name != null) {
       _historyManager.popRoute(); // Remove old
-      _historyManager.pushRoute(newRoute!.settings.name!); // Add new
+      final routeData = _extractRouteData(newRoute!);
+      _historyManager.pushRoute(newRoute.settings.name!, routeData: routeData); // Add new
     }
   }
 
@@ -101,7 +115,24 @@ class CustomRouteObserver extends AutoRouteObserver {
     }
   }
 
+  Map<String, dynamic> _extractRouteData(Route<dynamic> route) {
+    final routeData = <String, dynamic>{};
+
+    // Extract route arguments if available
+    if (route.settings.arguments != null) {
+      routeData['arguments'] = route.settings.arguments;
+    }
+
+    // Extract path parameters if it's an AutoRoute
+    final settings = route.settings;
+    routeData['name'] = settings.name;
+
+    return routeData;
+  }
+
   ValueNotifier<bool> get canGoBack => _historyManager.canGoBack;
+  ValueNotifier<String?> get currentRoute => _historyManager.currentRoute;
+  ValueNotifier<Map<String, dynamic>> get currentRouteData => _historyManager.currentRouteData;
   bool get hasBackRoute => _historyManager.hasBackRoute;
   List<String> get navigationStack => _historyManager.navigationStack;
 }

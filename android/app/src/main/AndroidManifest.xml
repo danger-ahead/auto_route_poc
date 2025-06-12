@@ -34,6 +34,11 @@
                 <data android:scheme="https" />
             </intent-filter>
 
+            <intent-filter android:autoVerify="true">
+                <data android:host="open" />
+                <data android:scheme="ttape" />
+            </intent-filter>
+
             <meta-data android:name="flutter_deeplinking_enabled"
                 android:value="true"/>
             <intent-filter android:autoVerify="true">
