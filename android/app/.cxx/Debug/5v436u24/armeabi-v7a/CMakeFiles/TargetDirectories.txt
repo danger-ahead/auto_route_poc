@@ -1,0 +1,2 @@
+/Users/shouryaghosh/Desktop/auto_route_library/auto_route/example/android/app/.cxx/Debug/5v436u24/armeabi-v7a/CMakeFiles/edit_cache.dir
+/Users/shouryaghosh/Desktop/auto_route_library/auto_route/example/android/app/.cxx/Debug/5v436u24/armeabi-v7a/CMakeFiles/rebuild_cache.dir

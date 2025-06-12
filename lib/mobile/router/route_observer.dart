@@ -1,0 +1,107 @@
+import 'package:auto_route/auto_route.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+
+// Global state manager for route history
+class RouteHistoryManager {
+  static final RouteHistoryManager _instance = RouteHistoryManager._internal();
+  factory RouteHistoryManager() => _instance;
+  RouteHistoryManager._internal();
+
+  final List<String> _navigationStack = [];
+  final ValueNotifier<bool> canGoBack = ValueNotifier<bool>(false);
+
+  void pushRoute(String routeName) {
+    // Only track meaningful navigation routes, not tab switches
+    if (_isMeaningfulRoute(routeName)) {
+      _navigationStack.add(routeName);
+      _scheduleUpdate();
+    }
+  }
+
+  void popRoute() {
+    if (_navigationStack.isNotEmpty) {
+      _navigationStack.removeLast();
+      _scheduleUpdate();
+    }
+  }
+
+  bool _isMeaningfulRoute(String routeName) {
+    // Skip basic tab routes and home route - only track actual page navigation
+    final skipRoutes = {
+      'HomeRoute',
+      'BooksTab',
+      'ProfileTab',
+      'SettingsTab',
+    };
+
+    return !skipRoutes.contains(routeName);
+  }
+
+  void _scheduleUpdate() {
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      _updateCanGoBack();
+    });
+  }
+
+  void _updateCanGoBack() {
+    // Show back button only if we have 2 or more routes in our navigation stack
+    // (meaning there's actually a previous screen to go back to)
+    final newValue = _navigationStack.length >= 2;
+
+    if (canGoBack.value != newValue) {
+      canGoBack.value = newValue;
+    }
+  }
+
+  bool get hasBackRoute => canGoBack.value;
+
+  void clearHistory() {
+    _navigationStack.clear();
+    _scheduleUpdate();
+  }
+
+  List<String> get navigationStack => List.unmodifiable(_navigationStack);
+}
+
+class CustomRouteObserver extends AutoRouteObserver {
+  final RouteHistoryManager _historyManager = RouteHistoryManager();
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    super.didPush(route, previousRoute);
+    if (route.settings.name != null) {
+      _historyManager.pushRoute(route.settings.name!);
+    }
+  }
+
+  @override
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    super.didPop(route, previousRoute);
+    if (route.settings.name != null) {
+      _historyManager.popRoute();
+    }
+  }
+
+  @override
+  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) {
+    super.didReplace(newRoute: newRoute, oldRoute: oldRoute);
+    // For replace, we don't change the stack size, just update the top route
+    if (newRoute?.settings.name != null) {
+      _historyManager.popRoute(); // Remove old
+      _historyManager.pushRoute(newRoute!.settings.name!); // Add new
+    }
+  }
+
+  @override
+  void didRemove(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    super.didRemove(route, previousRoute);
+    if (route.settings.name != null) {
+      _historyManager.popRoute();
+    }
+  }
+
+  ValueNotifier<bool> get canGoBack => _historyManager.canGoBack;
+  bool get hasBackRoute => _historyManager.hasBackRoute;
+  List<String> get navigationStack => _historyManager.navigationStack;
+}
