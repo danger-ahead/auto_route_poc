@@ -23,9 +23,8 @@ class _BookListScreenState extends State<BookListScreen> {
           child: ListTile(
             title: Text(book.name),
             subtitle: Text(book.genre),
-            onTap: () async {
-              final result = await context.pushRoute<String>(BookDetailsRoute(id: book.id));
-              print('BookDetailsRoute result: $result');
+            onTap: () {
+              context.router.push(BookDetailsRoute(id: book.id));
             },
           ),
         ),

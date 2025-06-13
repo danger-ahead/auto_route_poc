@@ -1,12 +1,16 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:example/data/db.dart';
 import 'package:example/mobile/router/auth_guard.dart';
 import 'package:example/mobile/router/router.dart';
-import 'package:example/mobile/router/route_observer.dart';
+import 'package:example/mobile/widgets/route_app_bar_config.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 //ignore_for_file: public_member_api_docs
 
-void main() => runApp(MyApp());
+void main() {
+  initializeRouteAppBarConfigs();
+  runApp(MyApp());
+}
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
@@ -26,7 +30,7 @@ class _MyAppState extends State<MyApp> {
       routerConfig: _rootRouter.config(
         reevaluateListenable: authService,
         navigatorObservers: () => [
-          CustomRouteObserver(),
+          AutoRouterObserver(),
         ],
         placeholder: (context) => const Center(
           child: CircularProgressIndicator(),

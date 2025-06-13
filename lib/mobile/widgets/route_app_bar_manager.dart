@@ -10,13 +10,16 @@ class RouteAppBarManager {
   final Map<String, RouteAppBarConfig> _routeConfigs = {};
 
   /// Register a route with its app bar configuration
-  void registerRoute(String routeName, RouteAppBarConfig config) {
-    _routeConfigs[routeName] = config;
+  void registerRoute(String path, RouteAppBarConfig config) {
+    _routeConfigs[path] = config;
   }
 
   /// Get the app bar configuration for a specific route
-  RouteAppBarConfig getConfigForRoute(String routeName) {
-    return _routeConfigs[routeName] ?? const RouteAppBarConfig();
+  RouteAppBarConfig getConfigForRoute(String path) {
+    if (path.contains('/books/')) {
+      path = '/books/';
+    }
+    return _routeConfigs[path] ?? const RouteAppBarConfig();
   }
 
   /// Check if a route has custom app bar configuration
